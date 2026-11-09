@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-"""
-NBE-GAPH Illustrative Validation Suite
-======================================
-Strictly illustrative numerical simulation of the four design variables
-of the NBE-GAPH governance architecture.
 
-This is NOT empirical data from schools, students, or real platforms.
-It is a controlled synthetic experiment that demonstrates the logical
-behaviour of the design variables and the effect of ablating each one.
-
-Purpose: Strengthen the architectural paper with transparent, reproducible
-quantitative illustration of the proposed mechanisms.
-
-All results are saved to ./NBE-GAPH_results/
-"""
 
 import os
 import numpy as np
@@ -25,9 +11,7 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 import warnings
 warnings.filterwarnings("ignore")
 
-# ------------------------------------------------------------
-# 0. Configuration & Reproducibility
-# ------------------------------------------------------------
+
 SEEDS = [42, 123, 2025]
 N_STUDENTS = 2000          # synthetic population size
 N_TIMESTEPS = 12           # simulated "weeks"
@@ -42,9 +26,7 @@ sns.set_theme(style="whitegrid", context="paper", font_scale=1.2)
 plt.rcParams["figure.dpi"] = 300
 plt.rcParams["savefig.bbox"] = "tight"
 
-# ------------------------------------------------------------
-# 1. Synthetic Population Generator
-# ------------------------------------------------------------
+
 def generate_population(n=N_STUDENTS, seed=42):
     rng = np.random.default_rng(seed)
 
@@ -73,9 +55,7 @@ def generate_population(n=N_STUDENTS, seed=42):
     })
     return pop
 
-# ------------------------------------------------------------
-# 2. Core Simulation Engine (implements the 4 design variables)
-# ------------------------------------------------------------
+
 def simulate_engagement(pop, config, seed=42):
     """
     config keys (all in [0,1]):
@@ -105,25 +85,22 @@ def simulate_engagement(pop, config, seed=42):
         friction = pop["cog_load_sensitivity"].values * (1.0 - cl)
         friction = np.clip(friction, 0, 0.85)
 
-        # --- Intertemporal Choice ---
-        # Present bias reduces future-oriented engagement unless supported
+       
         discount = pop["present_bias"].values * (1.0 - it)
         future_value = 1.0 - discount
 
-        # --- Equity Weighting ---
-        # Boost for low-SES and neurodiverse when equity is active
+        
         equity_boost = np.ones(n)
         if eq > 0:
             equity_boost += eq * (0.35 * (pop["neurodiverse"] == 1) +
                                   0.25 * (pop["ses"] < 0.4))
 
-        # --- Trust Calibration ---
-        # Trust drifts toward true system reliability when calibration is strong
+      
         true_reliability = 0.78   # assumed platform reliability
         trust = trust * (1 - 0.15*tc) + true_reliability * (0.15*tc)
         trust = np.clip(trust, 0.05, 0.98)
 
-        # Probability of engagement at this timestep
+     
         base_prob = (0.25 * pop["help_seeking"].values +
                      0.30 * future_value +
                      0.25 * trust +
@@ -131,16 +108,16 @@ def simulate_engagement(pop, config, seed=42):
         base_prob = base_prob * (1.0 - friction)
         base_prob = np.clip(base_prob, 0.02, 0.95)
 
-        # Realise engagement
+    
         engaged[:, t] = rng.random(n) < base_prob
         cumulative_use += engaged[:, t]
 
-    # Metrics per student
+ 
     engagement_rate = engaged.mean(axis=1)
     sustained = (engaged.sum(axis=1) >= 6).astype(float)          # engaged ≥ half the time
     trust_error = np.abs(trust - 0.78)
 
-    # Equity metrics (group differences)
+
     nd_mask = pop["neurodiverse"] == 1
     lowses_mask = pop["ses"] < 0.4
 
@@ -197,9 +174,7 @@ CONFIGS = {
     }
 }
 
-# ------------------------------------------------------------
-# 4. Main Experiment Loop (3 seeds)
-# ------------------------------------------------------------
+
 all_records = []
 detailed_per_seed = {}
 
@@ -233,9 +208,7 @@ for seed in SEEDS:
 
     detailed_per_seed[seed] = seed_results
 
-# ------------------------------------------------------------
-# 5. Aggregate Results & Statistics
-# ------------------------------------------------------------
+
 df = pd.DataFrame(all_records)
 df.to_csv(os.path.join(RESULTS_DIR, "tables", "summary_all_seeds.csv"), index=False)
 
@@ -257,9 +230,7 @@ summary.to_csv(os.path.join(RESULTS_DIR, "tables", "summary_mean_std.csv"))
 print("\n=== Aggregate Summary (Mean ± SD across 3 seeds) ===")
 print(summary)
 
-# ------------------------------------------------------------
-# 6. Statistical Tests
-# ------------------------------------------------------------
+
 print("\n=== Statistical Analysis ===")
 
 # ANOVA on mean engagement
@@ -301,9 +272,7 @@ with open(os.path.join(RESULTS_DIR, "logs", "statistics.txt"), "w") as f:
     for k, v in effect_sizes.items():
         f.write(f"  {k}: {v:.4f}\n")
 
-# ------------------------------------------------------------
-# 7. Visualisations
-# ------------------------------------------------------------
+
 # 7.1 Engagement by configuration
 plt.figure(figsize=(10, 5))
 order = list(CONFIGS.keys())
@@ -317,7 +286,6 @@ plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "figures", "engagement_boxplot.png"))
 plt.close()
 
-# 7.2 Equity gaps
 fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
 sns.barplot(data=df, x="config", y="equity_gap_nd", order=order, ax=axes[0], palette="muted", errorbar="sd")
 axes[0].set_title("Equity Gap (Neurotypical – Neurodiverse)")
@@ -332,7 +300,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "figures", "equity_gaps.png"))
 plt.close()
 
-# 7.3 Trust error
+
 plt.figure(figsize=(9, 4.5))
 sns.barplot(data=df, x="config", y="mean_trust_error", order=order, palette="coolwarm", errorbar="sd")
 plt.ylabel("Mean Trust Calibration Error")
@@ -343,7 +311,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "figures", "trust_error.png"))
 plt.close()
 
-# 7.4 Ablation impact (relative to Full)
+
 full_mean = summary.loc["Full_NBE-GAPH", "eng_mean"]
 ablation_impact = []
 for name in CONFIGS:
@@ -362,9 +330,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "figures", "ablation_impact.png"))
 plt.close()
 
-# ------------------------------------------------------------
-# 8. Detailed per-student export (one seed for inspection)
-# ------------------------------------------------------------
+
 example_seed = SEEDS[0]
 example_res = detailed_per_seed[example_seed]["Full_NBE-GAPH"]
 example_df = example_res["pop"].copy()
@@ -373,77 +339,7 @@ example_df["sustained"] = example_res["sustained"]
 example_df["trust_error"] = example_res["trust_error"]
 example_df.to_csv(os.path.join(RESULTS_DIR, "tables", f"per_student_seed{example_seed}_Full.csv"), index=False)
 
-# ------------------------------------------------------------
-# 9. README for the results folder
-# ------------------------------------------------------------
-readme = f"""
-NBE-GAPH Illustrative Validation Results
-========================================
 
-This folder contains the complete output of a controlled synthetic
-simulation that illustrates the logical behaviour of the four design
-variables of the NBE-GAPH governance architecture.
-
-IMPORTANT DISCLAIMER
---------------------
-These results are NOT empirical findings from real schools, students,
-or deployed platforms. They are a transparent numerical illustration
-of the design logic under controlled assumptions. The paper remains
-architectural; real-world pilot validation is future work.
-
-What was simulated
-------------------
-- Synthetic population of {N_STUDENTS} students with heterogeneity in
-  neurodiversity, SES, present bias, cognitive-load sensitivity, and
-  baseline trust.
-- 12 discrete timesteps.
-- Five configurations:
-  1. Full NBE-GAPH (all four variables active)
-  2–5. Ablations (one variable set to zero at a time)
-- Three independent random seeds: {SEEDS}
-
-Metrics
--------
-- Mean engagement rate
-- Sustained engagement (≥ 6/12 timesteps)
-- Trust calibration error
-- Equity gaps (Neurotypical–Neurodiverse and Higher-SES–Low-SES)
-
-Statistical tests performed
----------------------------
-- One-way ANOVA on engagement
-- Tukey HSD pairwise comparisons
-- Cohen's d effect sizes (Full vs each ablation)
-
-Files
------
-tables/
-  summary_all_seeds.csv          – raw summary per seed × config
-  summary_mean_std.csv           – mean ± SD across seeds
-  per_student_seed{example_seed}_Full.csv – detailed student-level data (one seed)
-
-figures/
-  engagement_boxplot.png
-  equity_gaps.png
-  trust_error.png
-  ablation_impact.png
-
-logs/
-  statistics.txt                 – full statistical report
-
-How to cite / describe in the paper
------------------------------------
-"To illustrate the logical contribution of each design variable we
-conducted a controlled synthetic simulation (N = {N_STUDENTS} agents,
-3 random seeds). The full NBE-GAPH configuration was compared with
-four ablations. Results (see Supplementary Material) show that
-removing any single variable produces statistically significant
-degradations in engagement and/or equity under the model assumptions.
-This exercise is purely illustrative and does not constitute empirical
-validation."
-
-Generated with the NBE-GAPH Illustrative Validation Suite.
-"""
 
 with open(os.path.join(RESULTS_DIR, "README.txt"), "w") as f:
     f.write(readme)
@@ -455,4 +351,4 @@ print("  - figures/")
 print("  - logs/")
 print("  - README.txt")
 print("="*60)
-print("\nSimulation complete. Ready for inclusion as Illustrative Validation.")
+print("\nSimulation complete.")
