@@ -1,0 +1,29 @@
+NBE-GAPH Illustrative Simulation – Statistical Report
+============================================================
+
+ANOVA (mean engagement across configs):
+  F-statistic = 15019.7914
+  p-value     = 7.657908e-19
+
+Tukey HSD results:
+              Multiple Comparison of Means - Tukey HSD, FWER=0.05               
+================================================================================
+       group1               group2        meandiff p-adj   lower   upper  reject
+--------------------------------------------------------------------------------
+Ablate_CognitiveLoad        Ablate_Equity    0.272    0.0  0.2673  0.2767   True
+Ablate_CognitiveLoad Ablate_Intertemporal    0.225    0.0  0.2202  0.2297   True
+Ablate_CognitiveLoad    Ablate_TrustCalib   0.2882    0.0  0.2835  0.2929   True
+Ablate_CognitiveLoad        Full_NBE-GAPH   0.2967    0.0   0.292  0.3014   True
+       Ablate_Equity Ablate_Intertemporal   -0.047    0.0 -0.0518 -0.0423   True
+       Ablate_Equity    Ablate_TrustCalib   0.0162    0.0  0.0115  0.0209   True
+       Ablate_Equity        Full_NBE-GAPH   0.0247    0.0    0.02  0.0294   True
+Ablate_Intertemporal    Ablate_TrustCalib   0.0632    0.0  0.0585   0.068   True
+Ablate_Intertemporal        Full_NBE-GAPH   0.0717    0.0   0.067  0.0764   True
+   Ablate_TrustCalib        Full_NBE-GAPH   0.0085 0.0011  0.0037  0.0132   True
+--------------------------------------------------------------------------------
+
+Cohen's d (Full NBE-GAPH vs each ablation):
+  Ablate_Intertemporal: 34.7742
+  Ablate_Equity: 22.1189
+  Ablate_CognitiveLoad: 182.8448
+  Ablate_TrustCalib: 7.6984
